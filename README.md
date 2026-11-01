@@ -48,8 +48,11 @@ pip install uv
 
 ```bash
 # 克隆项目
-git clone https://github.com/yourname/android-proxy-mcp.git
+git clone https://github.com/ngiokweng/android-proxy-mcp.git
 cd android-proxy-mcp
+
+# 創建虛擬環境 (py版本必須 < 3.13)
+uv venv --python 3.12
 
 # 安装依赖
 uv sync
