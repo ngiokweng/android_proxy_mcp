@@ -12,8 +12,19 @@ from threading import Lock
 
 from .models import TrafficRecord
 
-# 默认数据库路径
-DEFAULT_DB_PATH = Path("/tmp/android-proxy-traffic.db")
+
+def _project_root() -> Path:
+    """仓库根目录（向上寻找 pyproject.toml）。"""
+    here = Path(__file__).resolve()
+    for parent in here.parents:
+        if (parent / "pyproject.toml").is_file():
+            return parent
+    # src/android_proxy_mcp/core/sqlite_store.py -> 仓库根
+    return here.parents[3]
+
+
+# 默认数据库路径：<项目>/tmp/android-proxy-traffic.db
+DEFAULT_DB_PATH = _project_root() / "tmp" / "android-proxy-traffic.db"
 
 
 class SQLiteTrafficStore:
@@ -41,6 +52,7 @@ class SQLiteTrafficStore:
 
     def _get_conn(self) -> sqlite3.Connection:
         """获取数据库连接"""
+        self.db_path.parent.mkdir(parents=True, exist_ok=True)
         conn = sqlite3.connect(str(self.db_path), timeout=10)
         conn.row_factory = sqlite3.Row
         return conn

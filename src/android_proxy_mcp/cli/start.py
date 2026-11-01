@@ -156,6 +156,9 @@ def main():
         store = SQLiteTrafficStore(db_path)
         store.clear()
 
+        # repr 写成 Python 字面量，避免 Windows 路径里的 \t、\a 被当成转义
+        db_path_literal = repr(str(db_path))
+
         # 创建 addon 脚本来保存流量到 SQLite
         addon_script = f'''
 import json
@@ -163,7 +166,7 @@ import time
 from pathlib import Path
 import sqlite3
 
-DB_PATH = "{db_path}"
+DB_PATH = {db_path_literal}
 
 def init_db():
     conn = sqlite3.connect(DB_PATH)
@@ -247,9 +250,10 @@ def response(flow):
         conn.close()
 '''
 
-        # 写入临时 addon 脚本
-        addon_path = "/tmp/mitmproxy_addon.py"
-        with open(addon_path, "w") as f:
+        # 写入项目 tmp 下的 addon 脚本
+        addon_path = db_path.parent / "mitmproxy_addon.py"
+        addon_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(addon_path, "w", encoding="utf-8", newline="\n") as f:
             f.write(addon_script)
 
         logger.opt(colors=True).info(f"    📂 流量保存: <dim>{db_path}</dim>")
@@ -257,7 +261,7 @@ def response(flow):
 
         # 启动 mitmdump
         process = subprocess.Popen(
-            ["mitmdump", "-p", str(args.port), "-s", addon_path],
+            ["mitmdump", "-p", str(args.port), "-s", str(addon_path)],
             stdout=sys.stdout,
             stderr=sys.stderr,
         )
