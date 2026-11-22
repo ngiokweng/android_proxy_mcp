@@ -96,6 +96,10 @@ def main():
 
     parser = argparse.ArgumentParser(description="Android Proxy MCP 启动脚本")
     parser.add_argument("--port", type=int, default=8288, help="监听端口 (默认: 8288)")
+    parser.add_argument(
+        "--upstream-proxy",
+        help="上游代理 URL，例如 http://127.0.0.1:7890",
+    )
     args = parser.parse_args()
 
     # ========== 欢迎界面 ==========
@@ -257,11 +261,27 @@ def response(flow):
             f.write(addon_script)
 
         logger.opt(colors=True).info(f"    📂 流量保存: <dim>{db_path}</dim>")
+        if args.upstream_proxy:
+            logger.info(f"    上游代理: {args.upstream_proxy}")
         logger.info("")
 
         # 启动 mitmdump
+        # Use the project wrapper so generated leaf certificates stay below
+        # Chromium/Cronet's validity limit (the stock mitmdump default is 365
+        # days, which Google Play services rejects).
+        mitm_command = [
+            sys.executable,
+            "-m",
+            "android_proxy_mcp.cli.mitmdump_shortcert",
+            "-p",
+            str(args.port),
+        ]
+        if args.upstream_proxy:
+            mitm_command.extend(["--mode", f"upstream:{args.upstream_proxy}"])
+        mitm_command.extend(["-s", str(addon_path)])
+
         process = subprocess.Popen(
-            ["mitmdump", "-p", str(args.port), "-s", str(addon_path)],
+            mitm_command,
             stdout=sys.stdout,
             stderr=sys.stderr,
         )

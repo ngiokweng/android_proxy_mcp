@@ -94,6 +94,21 @@ uv sync
 uv run android-proxy-start
 ```
 
+如果需要让 mitmproxy 对外连接经过指定的上游 HTTP/HTTPS 代理，可以使用
+`--upstream-proxy`：
+
+```bash
+uv run android-proxy-start --port 8288 --upstream-proxy http://127.0.0.1:7890
+```
+
+上面的配置表示：Android 设备连接本机的 `8288` 端口，mitmproxy 再通过
+`127.0.0.1:7890` 访问外部网络。HTTPS 代理可使用类似
+`https://proxy.example.com:8443` 的 URL。Android 设备的代理仍需设置为运行
+本程序电脑的局域网 IP 和 `8288` 端口。
+
+启动器会将 mitmproxy 新生成的站点证书有效期设为 180 天，以兼容 Chromium/Cronet
+对 HTTPS 证书有效期的限制。此设置不会更换 mitmproxy CA；已安装的 CA 无需重新安装。
+
 你会看到如下输出：
 
 ```
